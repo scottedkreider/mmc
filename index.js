@@ -158,11 +158,11 @@ generateNumbers = function(){
     do{
         dayText += `<tr height = "150px"><th scope = "row">${week}</th>`
         for(let i = 0; i < 7; i++){
-            if(week === 1 && i < dayDescriptors[0].dayOfTheWeek){
-                dayText += `
-                <td></td>
-                `;
-            } else{
+            // if(week === 1 && i < dayDescriptors[0].dayOfTheWeek){
+            //     dayText += `
+            //     <td></td>
+            //     `;
+            // } else{
                 dayText += `
                 <td>${dayDescriptors[day] ? `${dayDescriptors[day].month} - ` + `${dayDescriptors[day].day}` : ""}
                     <div>
@@ -171,7 +171,7 @@ generateNumbers = function(){
                 </td>
                 `;
                 day++;
-            }
+            // }
         }
         dayText += "</tr>"
         week++;
