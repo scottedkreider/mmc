@@ -1,0 +1,23 @@
+.square {
+    height: 50px;
+    width: 50px;
+    background-color: #555;
+}
+
+.visible {
+    visibility: visible;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+}
+
+.big-checkbox {
+    width: 30px;
+    height: 30px;
+}
