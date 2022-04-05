@@ -11,7 +11,6 @@ const MONTHS = {
     9: "October",
     10: "November",
     11: "December",
-    12: "scott",
 }
 
 const DAYS = {
@@ -24,26 +23,27 @@ const DAYS = {
     6: "Saturday",
 }
 
-// cde mmc
+// calendar data entry display
 const cde = document.getElementById("calendar-entry");
-// date calculations
+// date calculations and reset button
 const dc = document.getElementById("date-calculations");
+// multimonth calendar display
+const mmc = document.getElementById("multi-month-calendar");
 
 
 
 window.addEventListener('DOMContentLoaded', (event) => {
-    console.log("window load" + event.type);
     if(localStorage.getItem("mmc-3")){
         refresh();
     } else {
         cde.innerHTML += `<form>
             <div class = "form-group">
                 <label for = "semesterStartDate">Enter the Semester Start Date</label>
-                <input type = "date" value = "2022-01-16" name = "semesterStartDate" id = "semesterStartDate">
+                <input type = "date" value = "2022-02-23" name = "semesterStartDate" id = "semesterStartDate" onchange="laterStartDateHandler();">
             </div>
             <div class = "form-group">
                 <label for = "semesterStartDate">Enter the Semester End Date</label>
-                <input type = "date" value = "2022-02-10" name = "semesterEndDate" id = "semesterEndDate">
+                <input type = "date" value = "2022-03-12" name = "semesterEndDate" id = "semesterEndDate">
             </div>
             <button id = "semesterDatesSubmit" type = "button">Submit</button>
         </form>
@@ -55,24 +55,27 @@ window.addEventListener('DOMContentLoaded', (event) => {
             event.preventDefault();
             if (confirm("Are you sure these are the correct dates?")) {
                 getDates(semesterDatesListener);
+            } else{
+                location.reload();
             }
         });
 
         refreshListener.addEventListener("click", refresh);
+        preventImproperDatesListener();
     }
 });
 
+function laterStartDateHandler(){
+    const startDate = document.getElementById("semesterStartDate");
+    const endDate = document.getElementById("semesterEndDate");
+    if(startDate.value > endDate.value){
+        endDate.value = `${startDate.value}`;
+    }
+}
 
-// id-500-items
 
 
 // Calendar date entry
-
-
-
-
-
-
 
 let semesterStartDate;
 let semesterEndDate;
@@ -94,15 +97,6 @@ getDates = function (listener) {
 
 
 
-
-
-
-
-// let semesterStartDate;
-// let semesterEndDate;
-
-
-
 function generateDayDescriptors(startDate, endDate) {
     let dayDescriptors = [];
     let arrayOfDates = [];
@@ -112,11 +106,12 @@ function generateDayDescriptors(startDate, endDate) {
     totalNumberOfDays = Math.abs((new Date(semesterEndDate) - new Date(semesterStartDate)) / (1000 * 60 * 60 * 24));
     arrayOfDates.forEach((element, index) => {
         dayDescriptors[index] = {
-            date: element,
-            day: element.getDate(),
-            dayOfTheWeek: element.getDay(),
+            date: new Date(element),
+            day: element.getUTCDate(),
+            dayOfTheWeek: element.getDay() === 6 ? 0 : element.getDay() + 1,
             isChecked: false,
-            month: element.toLocaleString('default', { month: 'long' }),
+            month: element.getUTCMonth(),
+            monthText: MONTHS[element.getUTCMonth()],
         }
     })
     return dayDescriptors;
@@ -129,9 +124,14 @@ refresh = function () {
     let myMMCInfo = JSON.parse(localStorage.getItem("mmc-3"));
     cde.innerHTML = '';
 
+    // dc.innerHTML = `
+    //     <div><h1>Total number of days = ${myMMCInfo.length}</h1></div>
+    //     <div><button id = "clearSemesterButton">Clear Semester</button></div>
+    // `;
+
     dc.innerHTML = `
-        <div><h1>Total number of days = ${myMMCInfo.length}</h1></div>
-    `
+    <div><button id = "clearSemesterButton">Clear Semester</button></div>
+    `;
 
     mmc.innerHTML = `
     <div class = "container-fluid">
@@ -156,10 +156,36 @@ refresh = function () {
 `;
 
     checkBoxListener(myMMCInfo);
+    resetListener();
 }
 
+resetListener = function(){
+    const resetListenerButton = document.getElementById("clearSemesterButton");
+    
+    resetListenerButton.addEventListener('click',(event) => {
+        event.preventDefault();
+        if(confirm("Are you sure you want to delete this semester?")){
+            localStorage.removeItem("mmc-3");
+        }
+        location.reload();
+    })
+}
+
+preventImproperDatesListener = function(){
+    const startDateForm = document.getElementById("semesterStartDate");
+    const endDateForm = document.getElementById("semesterEndDate");
+    const semesterDatesListener = document.getElementById("semesterDatesSubmit");
+
+    semesterDatesListener.addEventListener('mouseover',(event) => {
+        if(startDateForm.value > endDateForm.value){
+            semesterDatesListener.disabled = !semesterDatesListener.disabled;
+        }
+    })
+}
+
+
+
 dayIsInThePast = function (date) {
-    console.log(new Date(new Date(date).toDateString()) < new Date(new Date().toDateString()));
     return new Date(new Date(date).toDateString()) < new Date(new Date().toDateString());
 }
 
@@ -172,7 +198,7 @@ checkBoxListener = function (info) {
             if (dayIsInThePast(info[id].date) && !checkbox.isChecked) {
                 info[id].isChecked = true;
                 localStorage.setItem("mmc-3",JSON.stringify(info));
-                checkbox.parentElement.parentElement.classList += "bg-info";
+                checkbox.parentElement.parentElement.classList += "bg-success";
                 checkbox.parentElement.innerHTML = "";
             } else{
                 checkbox.checked = !checkbox.checked;
@@ -181,30 +207,35 @@ checkBoxListener = function (info) {
     })
 }
 
-const mmc = document.getElementById("multi-month-calendar");
+
 generateNumbers = function (infoArray) {
     let dayText = "";
     let week = 1;
     let day = 0;
+    let placeholders = [];
     for(var i = 0; i < infoArray[0].dayOfTheWeek; i++){
-        infoArray.unshift({
+        placeholders.push({
             date: "",
             day: "",
             dayOfTheWeek: "",
             isChecked: true,
             month: "",
+            monthText: "",
         });
     }
+    placeholders.forEach((ph) => {
+        infoArray.unshift(ph);
+    })
 
     do {
-        dayText += `<tr height = "150px"><th scope = "row">${week}</th>`
+        dayText += `<tr height = "150px" class = "font-weight-bold"><th scope = "row">${week}</th>`
         for (let i = 0; i < 7; i++) {
                 if(day < infoArray.length){
-                    if(infoArray[day].isChecked === false){
-                        dayText += `<td>${infoArray[day].month}  ${infoArray[day].day}
-                            <div><input type = 'checkbox' id = 'test${String(day).padStart(5,'0')}' class = 'big-checkbox'>`;
+                    if(infoArray[day].isChecked === true){
+                        dayText += `<td class = "bg-success">${infoArray[day].monthText} ${infoArray[day].day}`;
                     } else{
-                        dayText += `<td class = "bg-info">${infoArray[day].month} ${infoArray[day].day}`;
+                        dayText += `<td>${infoArray[day].monthText}  ${infoArray[day].day}
+                            <div><input type = 'checkbox' id = 'test${String(day).padStart(5,'0')}' class = 'big-checkbox'>`;
                     }
                 }
                 day++;
@@ -218,8 +249,3 @@ generateNumbers = function (infoArray) {
 }
 
 
-
-
-// console.log(localStorage.getItem("id-500-items"));
-
-// this is just to test github
